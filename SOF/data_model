@@ -1,0 +1,58 @@
+digraph {
+	Account [label=Account]
+	Account_IBAN [label=IBAN shape=ellipse]
+	Account -> Account_IBAN
+	Account_CurrencyCode [label=CurrencyCode shape=ellipse]
+	Account -> Account_CurrencyCode
+	Account_ActivationDate [label=ActivationDate shape=ellipse]
+	Account -> Account_ActivationDate
+	Transaction [label=Transaction]
+	Transaction_IBAN [label=IBAN shape=ellipse]
+	Transaction -> Transaction_IBAN
+	Transaction_Date [label=Date shape=ellipse]
+	Transaction -> Transaction_Date
+	Transaction_Time [label=Time shape=ellipse]
+	Transaction -> Transaction_Time
+	Transaction_Type [label=Type shape=ellipse]
+	Transaction -> Transaction_Type
+	Transaction_Amount [label=Amount shape=ellipse]
+	Transaction -> Transaction_Amount
+	Transaction_Currency [label=Currency shape=ellipse]
+	Transaction -> Transaction_Currency
+	Transaction_Fee [label=Fee shape=ellipse]
+	Transaction -> Transaction_Fee
+	Transaction_ExchangeRate [label=ExchangeRate shape=ellipse]
+	Transaction -> Transaction_ExchangeRate
+	Customer [label=Customer]
+	Customer_IBAN [label=IBAN shape=ellipse]
+	Customer -> Customer_IBAN
+	Customer_Type [label=Type shape=ellipse]
+	Customer -> Customer_Type
+	Customer_ValidityDates [label=ValidityDates shape=ellipse]
+	Customer -> Customer_ValidityDates
+	ExchangeRate [label=ExchangeRate]
+	ExchangeRate_Currency [label=Currency shape=ellipse]
+	ExchangeRate -> ExchangeRate_Currency
+	ExchangeRate_HalfSpread [label=HalfSpread shape=ellipse]
+	ExchangeRate -> ExchangeRate_HalfSpread
+	FeeStatement [label=FeeStatement]
+	FeeStatement_IBAN [label=IBAN shape=ellipse]
+	FeeStatement -> FeeStatement_IBAN
+	FeeStatement_TransactionGroup [label=TransactionGroup shape=ellipse]
+	FeeStatement -> FeeStatement_TransactionGroup
+	FeeStatement_Date [label=Date shape=ellipse]
+	FeeStatement -> FeeStatement_Date
+	FeeStatement_Count [label=Count shape=ellipse]
+	FeeStatement -> FeeStatement_Count
+	FeeStatement_RatedCount [label=RatedCount shape=ellipse]
+	FeeStatement -> FeeStatement_RatedCount
+	FeeStatement_FeeRate [label=FeeRate shape=ellipse]
+	FeeStatement -> FeeStatement_FeeRate
+	FeeStatement_FeeAmount [label=FeeAmount shape=ellipse]
+	FeeStatement -> FeeStatement_FeeAmount
+	Account -> Transaction
+	Customer -> Account
+	Transaction -> ExchangeRate
+	Transaction -> FeeStatement
+	Account -> FeeStatement
+}

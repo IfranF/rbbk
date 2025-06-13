@@ -1,0 +1,10 @@
+Target Field,Source Dataset,Source Field(s)
+iban,"dc_trx_clrg_issng_df, bsc_pymt_agrm_df, rel_x_ar_hist_df","CARDHDR_IBAN, IBAN, AR_AC_IBAN"
+transactiongroup,Derived,"Based on CARD_TP_CODE, CARD_TXN_ATM_POS_CODE, etc."
+transactiondate,dc_trx_clrg_issng_df,CARD_TXN_LCL_DT
+transactioncount,Derived,Count of transactions per group
+ratedtransactioncount,Derived,Based on fee applicability
+costorinterestrate,dc_trx_clrg_issng_df,CLRG_MU_TRFF_PCT
+costorinterestcurrencysuamount,Derived,Based on fee calculations
+costorinterestcurrencycode,Static or derived,Usually 'EUR'
+feeorinterestbasecode,Static,'1' or '2' depending on fee type
