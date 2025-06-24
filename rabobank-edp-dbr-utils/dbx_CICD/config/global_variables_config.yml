@@ -1,0 +1,52 @@
+#this is the configuration of the global_variables_config parameters
+variables:
+  #######################
+  ##  BUILD STAGE ##
+  #######################
+  variableGroup: 'vg_edp'
+  linuxPool: 'Rabo-Linux-Production'
+  SonarQubeConnectionName: 'Rabobank CQ SonarQube'
+  VariableNameCliProjectKey: 'sq_project_key_edp_dbr_utils'
+  PythonVersionSonar: '3.7, 3.8, 3.9, 3.10, 3.11'
+  windowsPool: 'Rabo-Windows-Production'
+  #leave this an empty string if you are not using a pom
+  pomLocation: ''
+  NexusIQProjectName: 'rabobank-edp-dbr-utils' #same as repo name
+  #the default string if you have java applications.
+  NexusIQScanTargetsMaven: '**/*.jar, **/*.war, **/*.ear, **/*.zip, **/*.tar.gz, **/*.dll'
+  NexusIQScanTargets: '**/*requirements.txt'
+  NexusPrivatecloudRepo: 'pypi-18'   
+  NexusPrivatecloudRepoUrl: "https://repo.nexuscloud.aws.rabo.cloud/repository/$(NexusPrivatecloudRepo)/"
+  pythonVersion: '3.10'
+  RequirementsFilePath: 'requirements.txt'
+  enableCodeBasedWheelPackages: 'true'
+  artifactFeed: 'Tribe Data and Analytics/edp_dbr_artifacts_feed'
+  artifactFeedName: 'edp_dbr_artifacts_feed'
+  FoldersToInclude: |
+    **//src//**/*
+    **//requirements.txt
+    **//setup.py
+    **//dist//*
+    **//dbx_CICD//dbx-jobs//*
+    **//dbx_CICD//dbx-globinit//**//*
+    **//tests//**/*
+  tenant: 'rabobank-edp-dbr-utils'
+  serviceConnectionName: 'walhalla-reg-dev-eu-walhalla (SPN)' #Will update after generic subscription.
+  resourceGroupName: 'rg-walhalla-dev-0001' #Will update after generic subscription.
+  databricksWorkspace: 'databricks-walhalla-dev-0002' #Will update after generic subscription.
+  keyVaultName: 'kv-dbr-walhalla' #Will update after generic subscription.
+  databricksHost: 'https://adb-577800501285027.7.azuredatabricks.net/' #Will update after generic subscription.
+  azureDatabricks: '2ff814a6-3304-4ab8-85cb-cd0e6f879c1d'
+  patName: 'edp-dbr-artifactfeed-token' ##kv secret name
+  PyTestJobName: 'pytest_run_rabobank_edp_dbr_utils'
+  #PyTestJobName: ''
+  System.Debug: 'true'
+  location: 'westeurope'
+
+  #######################
+  ##  UPLOAD STAGE ##
+  #######################
+  copyFilePathsourcetarget: |
+    rabobank-edp-dbr-utils/src/rabobank_edp_dbr_utils,src/rabobank_edp_dbr_utils
+  container: FileStore
+  repoName: rabobank-edp-dbr-utils

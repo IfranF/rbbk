@@ -1,0 +1,62 @@
+parameters:
+  - name: teams_to_publish
+    type: object
+    default:
+      - name: Upload_Panacea
+        artifactFeed: 'Tribe Data and Analytics/panacea-artifactory'
+      - name: Upload_Planet
+        artifactFeed: 'Tribe Data and Analytics/planet-artifactory'
+      - name: Upload_EDP_DBR
+        artifactFeed: 'Tribe Data and Analytics/edp_dbr_artifacts_feed'
+      - name: Upload_Walhalla
+        artifactFeed: 'Tribe Data and Analytics/walhalla-artifacts'
+      - name: Upload_To_drro_dp_artifacts_feed
+        artifactFeed: 'Tribe Payments/drro_dp_artifacts_feed'
+
+trigger: none
+
+resources:
+  repositories:
+    - repository: edp-dbr-deployment-template
+      type: git
+      name: Tribe Data and Analytics/edp-dbr-deployment-template
+      ref: main
+      trigger: none
+
+variables:
+  #######################
+  ##  GLOBAL VARIABLES ##
+  #######################
+  - template: /dbx_CICD/config/global_variables_config.yml
+  - group: NexusCloud_eu.NexusTeamWalhalla@rabobank.com  # Replace with your Variable Group name.
+
+stages:
+  - template: ./Generic/Create_Dependent_Packages/Create_Artifact_Packages.yml@edp-dbr-deployment-template
+    parameters:
+      dependsOn: ''
+      FoldersToInclude: ${{ variables.FoldersToInclude }}
+      tenant: ${{ variables.tenant }}
+      linuxPool: ${{ variables.linuxPool }}
+
+  - template: ./Generic/Create_Dependent_Packages/Build_Whl.yml@edp-dbr-deployment-template
+    parameters:
+      dependsOn: Create_Artifact
+      variableGroup: ${{ variables.variableGroup }}
+      linuxPool: ${{ variables.linuxPool }}
+      pythonVersion: ${{ variables.pythonVersion }}
+      repoName: ${{ variables.repoName }}
+
+  - template: ./Generic/Create_Dependent_Packages/Upload_To_Nexus.yml@edp-dbr-deployment-template
+    parameters:
+      dependsOn: Build_Whl_File
+      linuxPool: ${{ variables.linuxPool }}
+      pythonVersion: ${{ variables.pythonVersion }}
+
+  - ${{ each param in parameters.teams_to_publish }}:
+      - template: ./Generic/Create_Dependent_Packages/Upload_To_Artifact_Feed.yml@edp-dbr-deployment-template
+        parameters:
+          stageName: ${{ param.name }}
+          dependsOn: UploadToNexus
+          linuxPool: ${{ variables.linuxPool }}
+          pythonVersion: ${{ variables.pythonVersion }}
+          artifactFeed: ${{ param.artifactFeed }}

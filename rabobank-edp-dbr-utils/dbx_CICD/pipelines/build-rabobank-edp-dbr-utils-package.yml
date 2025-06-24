@@ -1,0 +1,91 @@
+# This is the main pipeline triggered from DevOps to build the latest rabobank-edp-dbr-util package into the Artifactory.
+parameters:
+  - name: stages
+    type: object
+    default: #Add additional name and artifactFeed to upload the package into multiple artifactory instances.
+      - name: Upload_rabobank_edp_dbr_utils
+        artifactFeed: Tribe Data and Analytics/edp_dbr_artifacts_feed
+
+trigger: none
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: Innersource/AzDo-pipeline-starters
+      ref: refs/heads/master
+      trigger: none
+
+    - repository: edp-dbr-deployment-template
+      type: git
+      name: Tribe Data and Analytics/edp-dbr-deployment-template
+      ref: main
+      trigger: none
+
+variables:
+  #######################
+  ##  GLOBAL VARIABLES ##
+  #######################
+  - template: /dbx_CICD/config/global_variables_config.yml
+
+stages:
+  - template: ./Generic/Create_Dependent_Packages/Prepare_Packages.yml@edp-dbr-deployment-template
+    parameters:
+      variableGroup: ${{ variables.variableGroup }}
+      linuxPool: ${{ variables.linuxPool }}
+      SonarQubeConnectionName: ${{ variables.SonarQubeConnectionName }}
+      VariableNameCliProjectKey: ${{ variables.VariableNameCliProjectKey }}
+      PythonVersionSonar: ${{ variables.PythonVersionSonar }}
+      windowsPool: ${{ variables.windowsPool }}
+      pomLocation: ${{ variables.pomLocation }}
+      NexusIQProjectName: ${{ variables.NexusIQProjectName }}
+      NexusIQScanTargets: ${{ variables.NexusIQScanTargets }}
+      pythonVersion: ${{ variables.pythonVersion }}
+      RequirementsFilePath: ${{ variables.RequirementsFilePath }}
+      enableCodeBasedWheelPackages: 'false'
+      artifactFeed: ${{ variables.artifactFeed }}
+      artifactFeedName: ${{ variables.artifactFeedName }}
+      FoldersToInclude: ${{ variables.FoldersToInclude }}
+      tenant: ${{ variables.tenant }}
+      serviceConnectionName: ${{ variables.serviceConnectionName }}
+      resourceGroupName: ${{ variables.resourceGroupName }}
+      databricksWorkspace: ${{ variables.databricksWorkspace }}
+      keyVaultName: ${{ variables.keyVaultName }}
+      databricksHost: ${{ variables.databricksHost }}
+      azureDatabricks: ${{ variables.azureDatabricks }}
+      patName: ${{ variables.patName }}
+      isProduction: 'false'
+      deployment_env: 'dev'
+      env: 'walhalla_dev'
+
+  - template: ./Generic/Create_Dependent_Packages/Setup_Databricks.yml@edp-dbr-deployment-template
+    parameters:
+      linuxPool: ${{ variables.linuxPool }}
+      SonarQubeConnectionName: ${{ variables.SonarQubeConnectionName }}
+      VariableNameCliProjectKey: ${{ variables.VariableNameCliProjectKey }}
+      PythonVersionSonar: ${{ variables.PythonVersionSonar }}
+      windowsPool: ${{ variables.windowsPool }}
+      pomLocation: ${{ variables.pomLocation }}
+      NexusIQProjectName: ${{ variables.NexusIQProjectName }}
+      NexusIQScanTargets: ${{ variables.NexusIQScanTargets }}
+      pythonVersion: ${{ variables.pythonVersion }}
+      RequirementsFilePath: ${{ variables.RequirementsFilePath }}
+      enableCodeBasedWheelPackages: 'false'
+      artifactFeed: ${{ variables.artifactFeed }}
+      artifactFeedName: ${{ variables.artifactFeedName }}
+      FoldersToInclude: ${{ variables.FoldersToInclude }}
+      tenant: ${{ variables.tenant }}
+      serviceConnectionName: ${{ variables.serviceConnectionName }}
+      resourceGroupName: ${{ variables.resourceGroupName }}
+      databricksWorkspace: ${{ variables.databricksWorkspace }}
+      keyVaultName: ${{ variables.keyVaultName }}
+      databricksHost: ${{ variables.databricksHost }}
+      azureDatabricks: ${{ variables.azureDatabricks }}
+      patName: ${{ variables.patName }}
+      isProduction: 'false'
+      deployment_env: 'dev'
+      env: 'walhalla_dev'
+      condition: succeeded()
+      dependsOn: Build
+      copyFilePathsourcetarget: ${{ variables.copyFilePathsourcetarget }}
+      variableGroup: ${{ variables.variableGroup }}
