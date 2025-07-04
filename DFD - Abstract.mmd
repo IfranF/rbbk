@@ -1,0 +1,26 @@
+ ---
+config:
+  theme: default
+  themeVariables:
+    background: transparent
+    primaryColor: "#f9f9f9"
+    primaryTextColor: "#000000"
+    primaryBorderColor: "#333333"
+    lineColor: "#333333"
+    textColor: "#000000"
+    edgeLabelBackground: "#ffffff"
+---
+
+erDiagram
+    CUSTOMER
+    ACCOUNT
+    PAYMENTACCOUNT
+    SAVINGSACCOUNT
+    TRANSACTION
+    DEPOSIT
+
+    CUSTOMER ||--o{ ACCOUNT : owns
+    ACCOUNT ||--|| PAYMENTACCOUNT : is_a
+    ACCOUNT ||--|| SAVINGSACCOUNT : is_a
+    PAYMENTACCOUNT ||--o{ TRANSACTION : initiates
+    SAVINGSACCOUNT ||--o{ DEPOSIT : receives 
