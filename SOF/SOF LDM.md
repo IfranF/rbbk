@@ -1,0 +1,38 @@
+erDiagram
+    Account ||--o{ Transaction : has
+    Transaction }o--|| TransactionType : is_a
+    Account ||--o{ AccountAgreement : has
+    ExchangeRate ||--o{ Transaction : applies_to
+
+    Account {
+        string IBAN PK
+    }
+
+    Transaction {
+        string IBAN FK
+        date TransactionDate
+        string TransactionGroup FK
+        string DebitCreditIndicator
+        int TransactionCount
+        int RatedTransactionCount
+        decimal CostOrInterestRate
+        decimal CostOrInterestCurrencySUAmount
+        string Currency
+    }
+
+    TransactionType {
+        string TransactionGroup PK
+        string Description
+    }
+
+    AccountAgreement {
+        string IBAN FK
+        string CCY_CODE
+        timestamp ACT_DTS PK
+    }
+
+    ExchangeRate {
+        string Currency PK
+        timestamp LoadTime PK
+        decimal HalfSpread
+    }
