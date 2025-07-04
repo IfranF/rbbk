@@ -1,0 +1,1582 @@
+
+
+
+Transform and load data marts for Statement of Fees
+
+Detailed Functional Specification
+
+
+
+
+
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Introduction
+
+
+
+
+This document provides a detailed description of the transform and load process for the data marts for Statement of Fees.
+
+
+
+Every year, for each payment account the Rabobank sends on a yearly basis information about the use of an account to the customer. The main target is: increasing of the quality and transparency of payment services in order to simplify the consumer’s search for cheaper payment services.
+
+
+
+SOF microservices gathers the information from the various systems like ART, COK and POD and eventually composes the ‘Statement of Fees’ for every customer. Eventually it will be processed by CEA and the ‘Printstraat’ and sent digitally or by paper to the customer.
+
+
+
+Now that CGW/POD will be decommissioned, we will set up a new delivery process from IFP.
+
+We have to send some information about the use of services and compensations paid by the customer, related to debit and credit cards.
+
+And also for Cross Border transactions, where the Rate Margin was not transparent. This is the margin which the Rabobank applies to midrate of a foreign exchange transaction to determine the bid or sell rate which is applied to a transaction. There are more variants were costs are charged, however in the SOF only EUR accounts are in scope.
+
+
+
+From IFP perspective, we store the data in a separate data mart in IFP. This data mart is input for the file that has to be created and sent to SOF microservices.
+
+The structure and content of the file(s) will be similar to that already being  delivered by CGW. The decision on the process of delivering the data files is yet to be decided.
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Fill data mart  with Statement of Fees information
+Load DMT-Statement-of-fees
+
+
+General
+The information gathered is stored in a data mart.
+
+This data mart contains debit and credit card transaction information of grouped by IBAN of the payment agreement, currency of the payment agreement, statement of fees transaction group, transaction date.
+
+
+
+
+
+Determining statement of fees transaction group for debit card
+
+
+9101 - Debit card, Pay by debit card, in foreign currency, exchange rate surcharge
+
+9107 - Debit card, Cash withdrawal, in foreign currency, exchange rate surcharge
+
+
+
+
+
+Determine IBAN and currency code for Clearing transactions (debit card)
+
+
+We only process private clients.
+
+Business clients are not involved in this because they already get a good insight in their costs in another way.
+
+All cards, debit as well as credit, are linked to an EUR account.
+
+
+
+The account number/IBAN of a clearing debit card transaction is determined as follows:
+
+To get all debit card transactions - Get the Cardholder IBAN from dc_trx_clrg_issng_di where Card type code = ‘DBT’
+To get currency code - Get those records from bsc_pymt_agrm_ds where IBAN = Cardholder IBAN(dc_trx_clrg_issng_di) and currency code is EUR
+To filter only the private customers - Read those rows in cdf_ggm_ar_hist where Arrangement Account IBAN = Cardholder IBAN(dc_trx_clrg_issng_di) and Arrangement Primary Natural Person Relation Id is not NULL
+Specifications for Clearing transactions (debit card)
+ 
+
+Frequency: Yearly 
+
+
+
+Period: 1st April 2024 – 31st  March 2025
+
+
+
+Output: DMT-Statement-of-fees
+
+
+
+Processing Inserts, Updates, Deletes: Only inserts
+
+
+
+
+
+Column
+
+Source
+
+9101
+
+Pay by debit card, in foreign currency, exchange rate surcharge
+
+
+
+29-07-2019: Exchange rate surcharge is 1.1% until 01-04-2019, then 1.2%
+
+
+
+Sum information per transaction date (Card Transaction Local Date) for each selected cardholder IBAN in table where
+
+·       Card Type Code = 'DBT'
+
+·       Card Transaction ATM Or POS Code = ‘POS’ and
+
+·       Card Transaction Original N3 Currency Code <> 978 (EUR)
+
+Transaction count
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = then multiply the outcome with -1.
+
+Rated Transaction count
+
+0 if Clearing Cardholder Billing Eurocent Amount = Clearing Cardholder Billing Without Markup Eurocent Amount
+
+
+
+Otherwise
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Fee or interest base code
+
+
+
+Cost per unit currency smallest unit amount
+
+NULL
+
+Cost or interest rate
+
+Clearing Markup Tariff Percentage (currently 1.2%)
+
+Cost or interest currency smallest unit amount
+
+Clearing Cardholder Billing Eurocent Amount -/- Clearing Cardholder Billing Without Markup Eurocent Amount
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Cost or interest amount currency code
+
+Card Transaction Original N3 Currency Code
+
+Cost or interest amount decimals number
+
+Card Transaction Original Currency Decimal Point Position Number
+
+
+
+
+
+9107
+
+Cash withdrawal, with a debit card in foreign currency, exchange rate surcharge
+
+
+
+29-07-2019: Price surcharge is 1.1% until 01-04-2019, then 1.2%
+
+Sum information per transaction date (Card Transaction Local Date) for each selected cardholder IBAN in table where
+
+·       Card Type Code = 'DBT'
+
+·       Card Transaction ATM Or POS Code = ‘ATM’ and
+
+·       Card Transaction Original N3 Currency Code <> 978 (EUR)
+
+Transaction count
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Rated Transaction count
+
+0 if Clearing Cardholder Billing Eurocent Amount = Clearing Cardholder Billing Without Markup Eurocent Amount
+
+
+
+Otherwise
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Fee or interest base code
+
+‘2’ (cost percentage)
+
+Cost per unit currency smallest unit amount
+
+NULL
+
+Cost or interest rate
+
+Clearing Markup Tariff Percentage (currently 1.2%)
+
+Cost or interest currency smallest unit amount
+
+Clearing Cardholder Billing Eurocent Amount -/- Clearing Cardholder Billing Without Markup Eurocent Amount
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Cost or interest amount currency code
+
+Card Transaction Original N3 Currency Code
+
+Cost or interest amount decimals number
+
+Card Transaction Original Currency Decimal Point Position Number
+
+
+
+
+
+Determining statement of fees transaction group for credit card
+
+
+9104 - Credit card, Pay by credit card, in foreign currency
+
+9106 - Credit card, Pay by credit card, in foreign currency, exchange rate surcharge
+
+
+
+9108 - Credit card, Cash withdrawal, in euro
+
+9109 - Credit card, Cash withdrawal, in foreign currency
+
+9110 - Credit card, Cash withdrawal, in foreign currency, exchange rate surcharge
+
+
+
+03DT - Overdraft credit card
+
+
+
+
+
+Determine IBAN and currency code for Clearing transactions (credit card)
+
+
+The account number/IBAN of a clearing debit card transaction is determined as follows:
+
+To get all credit card transactions - Get the Cardholder IBAN from dc_trx_clrg_issng_di where Card type code = ‘CDT’
+To get the currency code - Get those records from bsc_pymt_agrm_ds where IBAN = Cardholder IBAN(dc_trx_clrg_issng_di) and currency code is EUR
+To filter only the private customers - Read those rows in cdf_ggm_ar_hist where Arrangement Account IBAN = Cardholder IBAN(dc_trx_clrg_issng_di) and Arrangement Primary Natural Person Relation Id is not NULL
+
+
+There are 2 records for each ‘POS’ transaction of non-euro currency (one is transaction record and other one is surcharge fee record). 
+
+There would be 3 records for each ‘ATM’ transaction of non-euro currency (one is transaction record and other one is surcharge fee record and third one is ATM withdrawal fee record). 
+
+There would be 2 records for each ‘ATM’ transaction of euro currency (one is transaction record and other one is surcharge fee record).  
+
+ 
+
+2 steps -
+
+ 
+
+Filter transaction records where
+Card Transaction ATM Or POS Code = ‘POS’ or ‘ATM’and Card Transaction Original N3 Currency Code <> 978 (‘EUR’) 
+or  
+
+Card Transaction ATM Or POS Code = ‘ATM’and Card Transaction Original N3 Currency Code = 978 (‘EUR’) 
+ 
+
+Get the surcharge fee / ATM withdrawal fee record for each POS or ATM transaction record based on below condition:
+Card Transaction Local Date of fee record is same as transaction record
+Card Transaction Local Time is same as transaction record
+Cardholder IBAN is same as transaction record
+Card Transaction Original Booking Number is same as Card Transaction Original Booking Number of transaction record
+ 
+
+Rabobank has also so called ‘revolving’ credit cards. Roodstand (debit balance) is possible on these cards, and interest must be paid for that. That is column 03DT. 
+
+Specifications for Clearing transactions (debit card)
+ 
+
+Frequency: Yearly 
+
+
+
+Period: 1st April 2024 – 31st  March 2025
+
+
+
+Output: DMT-Statement-of-fees
+
+
+
+Processing Inserts, Updates, Deletes: Only inserts
+
+
+
+
+
+
+
+ 
+
+9104
+
+Paying by credit card, in foreign currency
+
+
+
+Free for private clients, so we only count the transactions.
+
+
+
+When there are no costs to charge, cost of interest base code will be filled with '1' and cost per unit currency smallest unit amount with 0.
+
+Sum information per transaction date (Card Transaction Local Date) for each selected cardholder IBAN in table where
+
+·       Card Type Code = 'CDT'
+
+·       Card Transaction Original N3 Currency Code <> 978 (EUR)
+
+·       Card Transaction ATM Or POS Code = ‘POS’
+
+Transaction count
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Rated Transaction count
+
+
+
+Fee or interest base code
+
+
+
+Cost per unit currency smallest unit amount
+
+
+
+Cost or interest rate
+
+
+
+Cost or interest currency smallest unit amount
+
+
+
+Cost or interest amount currency code
+
+Card Transaction Original N3 Currency Code
+
+Cost or interest amount decimals number
+
+Card Transaction Original Currency Decimal Point Position Number
+
+
+
+
+
+9106
+
+Payment by credit card, in foreign currency, exchange rate surcharge
+
+
+
+Price surcharge is 2% from 01-11-2018
+
+Sum information per transaction date (Card Transaction Local Date) for each selected cardholder IBAN in table where
+
+·       Card Type Code = 'CDT'
+
+·       Card Transaction Original N3 Currency Code <> 978 (EUR)
+
+·       Card Transaction ATM Or POS Code = ‘POS’
+
+
+
+There is a separate record with surcharge fee % for every non-euro ccy transaction (Card Transaction Original N3 Currency Code <> 978 (EUR) and Card Transaction ATM Or POS Code = ‘POS’
+
+For each record with, 
+
+·       Card Type Code = 'CDT'
+
+·       Card Transaction Original N3 Currency Code <> 978 (EUR)
+
+·       Card Transaction ATM Or POS Code = ‘POS’
+
+ 
+
+Get corresponding surcharge fee record for each account number having  
+
+·       Card Transaction Local Date
+
+·       Card Transaction Local Time
+
+·       Cardholder IBAN as transaction record 
+
+·       Card Transaction Original Booking Number = Card Transaction Original Booking Number of transaction record. 
+
+
+
+Transaction count
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Rated Transaction count
+
+0 if Clearing Cardholder Billing Eurocent Amount = Clearing Cardholder Billing Without Markup Eurocent Amount
+
+
+
+Otherwise
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Fee or interest base code
+
+
+
+Cost per unit currency smallest unit amount
+
+
+
+Cost or interest rate
+
+Clearing Markup Tariff Percentage (currently 2%)
+
+Cost or interest currency smallest unit amount
+
+Clearing Cardholder Billing Eurocent Amount - Clearing Cardholder Billing Without Markup Eurocent Amount
+
+
+
+If Debit Credit Code = 'CRED' then multiply the outcome with -1.
+
+Cost or interest amount currency code
+
+Card Transaction Original N3 Currency Code
+
+Cost or interest amount decimals number
+
+Card Transaction Original Currency Decimal Point Position Number
+
+
+
+
+
+9108
+
+Cash withdrawal, by credit card in euros
+
+
+
+You can also withdraw money from a payment terminal with your credit card. This costs € 4.50 each time.
+
+Sum information per transaction date (Card Transaction Local Date) for each selected cardholder IBAN in table where
+
+·       Card Type Code = 'CDT'
+
+·       Card Transaction Original N3 Currency Code = 978 (EUR)
+
+·       Card Transaction ATM Or POS Code = ‘ATM’
+
+
+
+There is a separate record with ATM withdrawal fee for every ATM transaction of ‘EUR’ ccy. (Card Transaction Original N3 Currency Code = 978 (EUR) and Card Transaction ATM Or POS Code = ‘ATM’)
+
+
+
+For each record with, 
+
+·       Card Type Code = 'CDT'
+
+·       Card Transaction Original N3 Currency Code = 978 (EUR)
+
+·       Card Transaction ATM Or POS Code = ‘ATM’
+
+ 
+
+Get corresponding ATM withdrawal fee record for each account number having  
+
+·       Card Transaction Local Date
+
+·       Card Transaction Local Time
+
+·       Cardholder IBAN as transaction record 
+
+·       Card Transaction Original Booking Number = Card Transaction Original Booking Number of transaction record. 
+
+
+
+
+
+Transaction count
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Rated Transaction count
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Fee or interest base code
+
+
+
+Cost per unit currency smallest unit amount
+
+Card Transaction Original Currency Smallest Unit Amount (currently )
+
+Cost or interest rate
+
+
+
+Cost or interest currency smallest unit amount
+
+Number Of Card Transactions * Card Transaction Original Currency Smallest Unit Amount (currently )
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Cost or interest amount currency code
+
+Card Transaction Original N3 Currency Code
+
+Cost or interest amount decimals number
+
+Card Transaction Original Currency Decimal Point Position Number
+
+
+
+
+
+9109
+
+Withdrawal of cash, with a credit card in foreign currency
+
+
+
+You can also withdraw money from a payment terminal with your credit card. This costs € 4.50 each time.
+
+Sum information per transaction date (Card Transaction Local Date) for each selected cardholder IBAN in table where
+
+·       Card Type Code = 'CDT'
+
+·       Card Transaction Original N3 Currency Code <> 978 (EUR)
+
+·       Card Transaction ATM Or POS Code = ‘ATM’
+
+There are two separate records with ATM withdrawal fee and non-euro ccy surcharge fee records for every ATM transaction of foreign ccy. (Card Transaction Original N3 Currency Code <> 978 (EUR) and Card Transaction ATM Or POS Code = ‘ATM’) 
+
+For each record with, 
+
+·       Card Type Code = 'CDT'
+
+·       Card Transaction Original N3 Currency Code <> 978 (EUR)
+
+·       Card Transaction ATM Or POS Code = ‘ATM’
+
+ 
+
+Get corresponding surcharge fee record for each account number having  
+
+·       Card Transaction Local Date
+
+·       Card Transaction Local Time
+
+·       Cardholder IBAN as transaction record 
+
+·       Card Transaction Original Booking Number = Card Transaction Original Booking Number of transaction record. 
+
+·       Clearing Markup Tariff Percentage is null
+
+
+
+Transaction count
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Rated Transaction count
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Fee or interest base code
+
+
+
+Cost per unit currency smallest unit amount
+
+
+
+Cost or interest rate
+
+
+
+Cost or interest currency smallest unit amount
+
+Number Of Card Transactions * Card Transaction Original Currency Smallest Unit Amount ()
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Cost or interest amount currency code
+
+Card Transaction Original N3 Currency Code
+
+Cost or interest amount decimals number
+
+Card Transaction Original Currency Decimal Point Position Number
+
+
+
+
+
+9110
+
+Cash withdrawal, credit card in foreign currency, exchange rate surcharge
+
+
+
+Price surcharge is 2% from 01-11-2018
+
+Sum information per transaction date (Card Transaction Local Date) for each selected cardholder IBAN in table where
+
+·       Card Type Code = 'CDT'
+
+·       Card Transaction Original N3 Currency Code <> 978 (EUR)
+
+·       Card Transaction ATM Or POS Code = ‘ATM’
+
+
+
+There are two separate records with ATM withdrawal fee and non-euro ccy surcharge fee records for every ATM transaction of foreign ccy. (Card Transaction Original N3 Currency Code <> 978 (EUR) and Card Transaction ATM Or POS Code = ‘ATM’)
+
+ 
+
+For each record with, 
+
+·       Card Type Code = 'CDT'
+
+·       Card Transaction Original N3 Currency Code <> 978 (EUR)
+
+·       Card Transaction ATM Or POS Code = ‘ATM’
+
+ 
+
+Get corresponding surcharge fee record for each account number having  
+
+·       Card Transaction Local Date
+
+·       Card Transaction Local Time
+
+·       Cardholder IBAN as transaction record 
+
+·       Card Transaction Original Booking Number = Card Transaction Original Booking Number of transaction record. 
+
+
+
+Transaction count
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Rated Transaction count
+
+0 if Clearing Cardholder Billing Eurocent Amount = Clearing Cardholder Billing Without Markup Eurocent Amount
+
+
+
+Otherwise
+
+Number Of Card Transactions
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Fee or interest base code
+
+
+
+Cost per unit currency smallest unit amount
+
+
+
+Cost or interest rate
+
+
+
+Cost or interest currency smallest unit amount
+
+Clearing Cardholder Billing Eurocent Amount - Clearing Cardholder Billing Without Markup Eurocent Amount
+
+
+
+If Debit Credit Code = 'CRED' then multiply the outcome with -1.
+
+Cost or interest amount currency code
+
+Card Transaction Original N3 Currency Code
+
+Cost or interest amount decimals number
+
+Card Transaction Original Currency Decimal Point Position Number
+
+
+
+
+
+03DT
+
+Overdraft credit card
+
+Sum information per transaction date (Card Transaction Local Date) for each selected cardholder IBAN in table where
+
+·       Card Type Code = 'CDT'
+
+·       Card Transaction Original Processing Decision Code = ‘CRVI’ (credit card revolving interest) 
+
+ 
+
+Note: instead of the selection on Card Transaction Original Processing Decision Code, it is also possible to do the selection on: 
+
+Card Transaction Profile Code = ‘4031’ 
+
+Both selection criteria are equal and either one of them can be used. 
+
+
+
+Transaction count
+
+
+
+Rated Transaction count
+
+
+
+Fee or interest base code
+
+
+
+Cost per unit currency smallest unit amount
+
+
+
+Cost or interest rate
+
+
+
+
+
+
+
+
+
+Cost or interest currency smallest unit amount
+
+Clearing Cardholder Billing Eurocent Amount
+
+
+
+If Card Transaction Debit-Credit Code = 'CRED' then multiply the outcome with -1.
+
+Cost or interest amount currency code
+
+Card Transaction Original N3 Currency Code
+
+Cost or interest amount decimals number
+
+Card Transaction Original Currency Decimal Point Position Number
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Specifications for Rate Margin for incoming cross border transactions
+
+
+  
+
+Tariff group: 
+
+9112 
+
+SOF Definition: 
+
+Exchange rate storage 
+
+Definition: 
+
+In foreign currencies or to countries outside SEPA in euro 
+
+ 
+
+
+
+Output: DMT-Statement-of-fees
+
+ 
+
+Input: IXB_PO_MSG_INF_V2_DI
+
+
+
+Processing Inserts, Updates, Deletes: Only inserts
+
+ 
+
+Identify possibilities: Customer receives a transaction in a foreign currency on his EUR account 
+
+ 
+
+Identify applicable transactions and calculate: 
+
+Identify the transactions: 
+
+Select all accounts for personal customers 
+Read those rows in cdf_ggm_ar_hist where Arrangement Primary Natural Person Relation Id is not NULL
+
+Product is ‘World payment incoming’
+Cross Border Payment Order Product Code = ‘WI’
+
+Transaction has been processed successfully
+Cross Border Payment Order Final Status Code = 'COMPLETE' 
+
+Identify transactions with currency conversion (‘currency conversion transactions') 
+Incoming Cross Border Payment Order Debit Account Currency Code <> Cross Border Payment Order Rabobank Customer Credit Account Currency Code
+
+Exclude transactions with a ‘Rate agreement indication’
+Cross Border Payment Order Foreign Exchange Rate Agreement Flag = 'N' 
+
+Transaction is received in a Foreign Currency.
+Incoming Cross Border Payment Order Debit Account Currency Code <> 'EUR' 
+
+Transaction is credited in the EUR currency:
+Cross Border Payment Order Rabobank Customer Credit Account Currency Code = 'EUR' 
+
+
+
+ 
+
+Column 
+
+Source 
+
+9112 
+
+In foreign currencies or to countries outside SEPA in euro
+ 
+
+
+
+Sum information for each combination of 
+
+- Transaction date 
+
+- IBAN / Currency combination 
+
+- Cross Border Payment Order Rabobank Customer Credit Account Currency Code
+
+In IXB_PO_MSG_INF_V2_DI , where: 
+
+- cdf_ggm_ar_hist. Arrangement Primary Natural Person Relation Id is not NULL
+
+- Cross Border Payment Order Product Code = 'WI’
+
+- Cross Border Payment Order Final Status Code = 'COMPLETE' 
+
+- Cross Border Payment Order Rabobank Customer Debit Account Currency Code <> Cross Border Payment Order Rabobank Customer Credit Account Currency Code
+
+- Cross Border Payment Order Foreign Exchange Rate Agreement Flag = 'N' 
+
+- Incoming Cross Border Payment Order Debit Currency Code <> 'EUR' 
+
+- Cross Border Payment Order Rabobank Customer Credit Account Currency Code = 'EUR' 
+
+IBAN 
+
+IBAN from GWTBD18 for begunstigde-bbo-key 
+
+Currency code 
+
+Rabobank Customer Credit Account Currency Code
+
+SoF transaction group code 
+
+9112 
+
+Transaction date 
+
+Payment engine final status datetime
+
+Debit credit code 
+
+‘D’ 
+
+Period start date 
+
+
+
+Period end date 
+
+
+
+Transaction count
+
+Payment order quantity - Number Of Transactions
+
+Rated Transaction count
+
+Payment order quantity for each row where result of calculation for cost or interest currency smallest unit amount'> 0
+
+Fee or interest base code
+
+‘
+
+Cost per unit currency smallest unit amount
+
+
+
+Cost or interest rate
+
+N
+
+Cost or interest currency smallest unit amount
+
+Result of the calculation for ‘valutakosten’: 
+
+((debet-rekening-geboekt-muntsoort-bedrag / (credit-wisselkoers - koersmarge)) - credit-rekening-geboekt-muntsoort-bedrag) 
+ 
+where the tranasction date is _dat of gwtb492 to get the koers-marge. 
+ 
+
+Cost or interest amount currency code
+
+Card Transaction Original N3 Currency Code
+
+Cost or interest amount decimals number
+
+Card Transaction Original Currency Decimal Point Position Number
+
+Staged date
+
+
+
+
+
+
+
+
+
+
+
+Specifications for Rate Margin for outgoing cross border transactions
+
+
+
+
+Tariefgroep:
+
+9111
+
+SOF Definition: 
+
+Exchange rate storage 
+
+Definition:
+
+In foreign currencies or to countries outside SEPA in euro
+
+ 
+
+
+
+Output:
+
+DMT-Statement-of-fees
+
+
+
+Input:
+
+FAC_OXB_PO_MSG_INF
+
+
+
+Processing Inserts, Updates, Deletes
+
+Only inserts
+
+
+
+
+
+
+
+
+
+Identify possibilities
+
+Customer initiates a transaction from an EUR-account in the EUR currency in favor of a foreign currency account
+Customer initiates a transaction from a foreign currency account in EUR
+
+
+
+
+1: Customer initiates a transaction from an EUR-account in the EUR currency in favor of a foreign currency account
+
+
+Identify the transactions:
+
+Select all accounts for personal customers
+Read those rows in cdf_ggm_ar_hist where Arrangement Primary Natural Person Relation Id is not NUL
+
+Product is ‘World Payment Outgoing’
+Cross Border Product Code = 'WB’
+
+Transaction has been processed successfully
+Final Status Code = 'COMPLETE’
+
+Identify transactions with currency conversion (‘Coin conversion transactions’)
+
+
+Exclude transactions with a ‘Rate Agreement Indication’
+Foreign Exchange Rate Agreement Flag = 'N'
+
+Transaction is received from EUR account.
+Debit Account Currency Code = 'EUR'
+
+Transaction is credited in the foreign currency:
+Credit Currency Code <> 'EUR'
+
+
+
+Column
+
+Source
+
+9111
+
+In foreign currencies or to countries outside SEPA in euro
+
+
+
+Sum information for each combination of
+
+- Transaction date
+
+- IBAN / Currency combination
+
+In OXB_PO_MSG_INF , where: 
+
+
+
+- cdf_ggm_ar_hist. Arrangement Primary Natural Person Relation Id is not NULL
+
+- Cross Border Payment Order Product Code = 'WB’
+
+- Cross Border Payment Order Final Status Code = 'COMPLETE' 
+
+-
+
+- Cross Border Payment Order Foreign Exchange Rate Agreement Flag = 'N' 
+
+-
+
+-
+
+ - BOP_BER_KLS_CD IN (OSN, PAY)
+
+
+
+IBAN
+
+Outgoing Payment Order Debit Account IBAN
+
+Currency code 
+
+
+
+SoF transaction group code 
+
+9111
+
+Transaction date 
+
+Payment Order Payment Engine Final Status Datetime
+
+Debit credit code 
+
+
+
+Period start  
+
+
+Period end  
+
+
+Transaction count
+
+Payment order quantity
+
+Rated Transaction count
+
+Payment order quantity for each row where result of calculation for cost or interest currency smallest unit amount'> 0
+
+Fee or interest base code
+
+
+
+Cost per unit currency smallest unit amount
+
+
+
+Cost or interest rate
+
+
+
+Cost or interest currency smallest unit amount
+
+  ------------------------------------------------------------
+Check if it is Credit or Debit conversion:
+
+when
+
+  Original Currency Code = then “debetconversie”
+
+
+
+  when
+
+  Original Currency Code = 
+
+  then “creditconversie”
+
+  -------------------------------------------------------------
+IF DEBETCONVERSIE:
+(Debit Account Booked Currency Amount - (Credit Currency Amount / ()))
+
+= "Currency Fee in EUR Outgoing Transaction"
+  --------------------------------------------------------------
+
+IF CREDITCONVERSIE:
+
+(Original currency amount * (Credit Exchange Rate + exchange rate)) - Credit Currency Amount
+
+= "FX Fee in Outgoing Transaction FC"
+
+
+
+Result of the calculation for 'valutakosten':
+
+
+
+where the transcation date is between va_dat and tm_dat of GWTB492 to get the koers-marge.
+
+
+Cost or interest amount currency code
+
+If there is debit conversion the amount will be in EUR.
+
+When there is a credit conversion the amount will be the currency of the :
+
+
+
+when
+
+  Original Currency Code = Credit Currency Code  
+
+  then EUR
+
+
+
+  when
+
+  Original Currency Code =  Debit Account Currency Code
+
+  then Credit Currency Code              
+
+Cost or interest amount decimals number
+
+
+
+Staged date
+
+
+
+
+
+
+2: Customer initiates a transaction from a foreign currency account in EUR
+
+
+Both debit as credit conversion???
+
+This record will be not written to the EUR-account!
+
+Debetconversions might be in foreign currency and creditconversions in EUR currency? (Question send to Maarten)Yes
+
+
+Identify applicable transactions and calculate:
+
+Identify the transactions:
+
+Select all accounts for personal customers
+Read those rows in cdf_ggm_ar_hist where Arrangement Primary Natural Person Relation Id is not NUL
+
+Product is ‘World Payment Outgoing’
+Cross Border Product Code = 'WB’
+
+Transaction has been processed successfully
+Final Status Code = 'COMPLETE’
+
+Identify transactions with currency conversion (‘Coin conversion transactions’)
+Debit Account Currency Code <> Credit Currency Code
+
+Exclude transactions with a ‘Rate Agreement Indication’
+Foreign Exchange Rate Agreement Flag = 'N'
+
+Transaction is received in a Foreign Currency.
+Debit Account Currency Code <> 'EUR'
+
+Transaction is credited in the EUR currency:
+Credit Currency Code = 'EUR'
+
+
+
+
+
+
+
+Column
+
+Source
+
+9111
+
+In foreign currencies or to countries outside SEPA in euro
+
+
+
+
+Sum information for each combination of
+
+- Transaction date
+
+- IBAN / Currency combination
+
+- DBTR_REK_MSRT_CD
+
+- koersmarge
+
+in OXB_PO_MSG_INF, where:
+
+- cdf_ggm_ar_hist. Arrangement Primary Natural Person Relation Id is not NULL
+
+- Cross Border Payment Order Product Code = 'WB’
+
+- Cross Border Payment Order Final Status Code = 'COMPLETE' 
+
+- - Cross Border Payment Order Rabobank Customer Debit Account Currency Code <> Cross Border Payment Order Rabobank Customer Credit Account Currency Code
+
+- Outgoing Cross Border Payment Order Debit Currency Code <> 'EUR' 
+
+- Cross Border Payment Order Rabobank Customer Credit Account Currency Code = 'EUR' 
+
+- Cross Border Payment Order Foreign Exchange Rate Agreement Flag = 'N' 
+
+- BOP_BER_KLS_CD <> OPI
+
+
+
+IBAN
+
+Outgoing Payment Order Debit Account IBAN
+
+Currency code 
+
+Outgoing Payment Order Debit Account Currency Code
+
+SoF transaction group code 
+
+9111
+
+Transaction date 
+
+Payment Order Payment Engine Final Status Datetime
+
+Debit credit code 
+
+
+
+Period start  
+
+
+Period end  
+
+
+Transaction count
+
+Payment order quantity - Number Of Transactions
+
+Rated Transaction count
+
+Payment order quantity for each row where result of calculation for cost or interest currency smallest unit amount'> 0
+
+Fee or interest base code
+
+‘2’ (cost percentage)
+
+Cost per unit currency smallest unit amount
+
+NULL
+
+Cost or interest rate
+
+NULL
+
+
+
+Result of the calculation for ‘valutakosten’:
+
+  --------------------------------------------------------------
+Check if it is Credit or Debit conversion:
+
+when
+
+  Original Currency Code = Credit Currency Code  then “debetconversie”
+
+
+
+  when
+
+  Original Currency Code =  Debit Account Currency Code
+
+  then “creditconversie”
+
+
+
+  --------------------------------------------------------------
+IF DEBETCONVERSIE:
+(Debit Account Booked Currency Amount - (Original currency amount * (Debit Exchange Rate - exchange rate)))
+
+= "FX Fee in Outgoing Transaction FC"
+
+
+  --------------------------------------------------------------
+
+IF CREDITCONVERSIE:
+
+( (Original Currency Amount / (Credit Exchange Rate - Exchange Rate)) - Credit Currency Amount)
+
+= "Currency Fee in EUR Outgoing Transaction"
+
+
+
+where the transcation date is between va_dat and tm_dat of GWTB492 to get the koers-marge.
+
+
+Cost or interest amount currency code
+
+When there is a credit conversion the amount will be in EUR.
+If there is debit conversion the amount will be in the currency of the debit account:
+
+
+
+  when
+
+  Original Currency Code = Credit Currency Code  
+
+  then Debit Account Currency Code
+
+
+
+  when
+
+  Original Currency Code =  Debit Account Currency Code
+
+  then ‘eur’ 
+
+Cost or interest amount decimals number
+
+
+
+Staged
+
+
