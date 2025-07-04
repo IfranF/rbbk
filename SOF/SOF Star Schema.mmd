@@ -1,0 +1,33 @@
+erDiagram
+    DimAccount ||--o{ FactTransaction : joins
+    DimTransactionType ||--o{ FactTransaction : groups
+    DimExchangeRate ||--o{ FactTransaction : uses
+
+    FactTransaction {
+        string IBAN FK
+        string TransactionGroup FK
+        date TransactionDate
+        string DebitCreditIndicator
+        int TransactionCount
+        int RatedTransactionCount
+        decimal CostOrInterestRate
+        decimal CostOrInterestCurrencySUAmount
+        string CostCurrency
+    }
+
+    DimAccount {
+        string IBAN PK
+        string CCY_CODE
+        timestamp LatestAgreementDate
+    }
+
+    DimTransactionType {
+        string TransactionGroup PK
+        string Description
+    }
+
+    DimExchangeRate {
+        string Currency PK
+        timestamp LoadTime PK
+        decimal HalfSpread
+    }
