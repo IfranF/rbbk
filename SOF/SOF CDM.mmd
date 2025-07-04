@@ -1,0 +1,13 @@
+erDiagram
+    Account ||--o{ Transaction : records
+    Transaction }o--|| TransactionType : classified_as
+    Transaction ||--o{ Fee : incurs
+    Transaction ||--o{ ExchangeRate : uses
+    Account ||--o{ Agreement : governed_by
+
+    Account
+    Transaction
+    TransactionType
+    Fee
+    ExchangeRate
+    Agreement
